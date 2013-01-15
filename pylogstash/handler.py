@@ -2,7 +2,6 @@ import logging
 import zmq
 import socket
 import datetime
-import threading
 
 MAX_MESSAGES = 1000
 
@@ -20,19 +19,10 @@ class Handler(logging.Handler):
         self._connect_string = connect_string
         self._fields = fields
         self._input_type = input_type
-        self._local = threading.local()
         self._queue_length = queue_length
-
-    @property
-    def publisher(self):
-        if not hasattr(self._local, 'publisher'):
-            print("creating publisher")
-            # 0mq sockets aren't threadsafe, so bind them into a
-            # threadlocal
-            self._local.publisher = self._context.socket(zmq.PUB)
-            self._local.publisher.setsockopt(zmq.HWM, self._queue_length)
-            self._local.publisher.connect(self._connect_string)
-        return self._local.publisher
+        self.publisher = self._context.socket(zmq.PUB)
+        self.publisher.setsockopt(zmq.HWM, self._queue_length)
+        self.publisher.connect(self._connect_string)
 
     def emit(self, record):
         field_dict = dict([(field, getattr(record, field)) for field in self._fields if hasattr(record, field)])
