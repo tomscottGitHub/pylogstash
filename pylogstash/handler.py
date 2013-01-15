@@ -39,12 +39,13 @@ class Handler(logging.Handler):
         tags = []
         tags.extend(self._tags)
         tags.append('pylogstash')
-        tags.append(record.name)
+        tags.extend(record.name.split("."))
         timestamp = datetime.datetime.utcfromtimestamp(record.created).isoformat()
         field_dict['timestamp'] = timestamp
         host = socket.gethostname()
         message = {
             "@source": record.filename,
+            "@source_path": record.name,
             "@tags": tags,
             "@timestamp": timestamp,
             "@type": self._input_type,
@@ -52,6 +53,4 @@ class Handler(logging.Handler):
             "@source_host": host,
             "@message": self.format(record)
         }
-        print("Shipping log")
         self.publisher.send_json(message)
-        print("message shipped")
